@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import MenuClient from './MenuClient';
+import FacebookPrompt from './FacebookPrompt';
 
 // Force dynamic rendering to always get the latest prices, or use revalidate.
 // We'll use revalidate = 0 to ensure it's always up to date for now.
@@ -33,6 +34,9 @@ export default async function Home() {
 
         <MenuClient categories={categories || []} products={products || []} />
       </div>
+
+      {/* Smart Facebook Follow Prompt */}
+      <FacebookPrompt />
     </main>
   );
 }
