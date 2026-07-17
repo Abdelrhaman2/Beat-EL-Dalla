@@ -65,11 +65,11 @@ export default function MenuClient({ categories, products }: { categories: Categ
             animate={{ opacity: 0.22, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
             transition={{ duration: 0.8, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full object-cover filter blur-[2px]"
+            className="absolute inset-0 w-full h-full object-cover"
           />
         </AnimatePresence>
         {/* Dark overlay specifically blended for coffee shop aesthetic */}
-        <div className="absolute inset-0 bg-[#0c0a08]/85 backdrop-blur-[1px] -z-10" />
+        <div className="absolute inset-0 bg-[#0c0a08]/85 -z-10" />
       </div>
 
       {/* Title displaying active category */}
