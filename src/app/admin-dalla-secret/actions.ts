@@ -28,17 +28,21 @@ export async function deleteCategory(id: string, password: string) {
   revalidatePath('/admin-dalla-secret');
 }
 
-export async function addProduct(categoryId: string, name: string, price: number, password: string) {
+export async function addProduct(categoryId: string, name: string, price: number, password: string, imageUrl?: string) {
   verifyAuth(password);
-  const { error } = await supabase.from('products').insert([{ category_id: categoryId, name, price }]);
+  const insertData: Record<string, unknown> = { category_id: categoryId, name, price };
+  if (imageUrl) insertData.image_url = imageUrl;
+  const { error } = await supabase.from('products').insert([insertData]);
   if (error) throw error;
   revalidatePath('/');
   revalidatePath('/admin-dalla-secret');
 }
 
-export async function updateProduct(id: string, name: string, price: number, password: string) {
+export async function updateProduct(id: string, name: string, price: number, password: string, imageUrl?: string | null) {
   verifyAuth(password);
-  const { error } = await supabase.from('products').update({ name, price }).eq('id', id);
+  const updateData: Record<string, unknown> = { name, price };
+  if (imageUrl !== undefined) updateData.image_url = imageUrl;
+  const { error } = await supabase.from('products').update(updateData).eq('id', id);
   if (error) throw error;
   revalidatePath('/');
   revalidatePath('/admin-dalla-secret');
@@ -46,10 +50,44 @@ export async function updateProduct(id: string, name: string, price: number, pas
 
 export async function deleteProduct(id: string, password: string) {
   verifyAuth(password);
+  // Get product to find its image
+  const { data: product } = await supabase.from('products').select('image_url').eq('id', id).single();
+  
+  // Delete from storage if image exists
+  if (product?.image_url) {
+    const url = product.image_url as string;
+    const pathMatch = url.split('/product-images/');
+    if (pathMatch[1]) {
+      await supabase.storage.from('product-images').remove([pathMatch[1]]);
+    }
+  }
+  
   const { error } = await supabase.from('products').delete().eq('id', id);
   if (error) throw error;
   revalidatePath('/');
   revalidatePath('/admin-dalla-secret');
+}
+
+export async function uploadProductImage(formData: FormData, password: string) {
+  verifyAuth(password);
+  
+  const file = formData.get('file') as File;
+  if (!file) throw new Error('لم يتم اختيار ملف');
+
+  const fileExt = file.name.split('.').pop();
+  const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from('product-images')
+    .upload(fileName, file, { cacheControl: '3600', upsert: false });
+
+  if (uploadError) throw uploadError;
+
+  const { data: { publicUrl } } = supabase.storage
+    .from('product-images')
+    .getPublicUrl(fileName);
+
+  return publicUrl;
 }
 
 export async function importProductsFromCsv(

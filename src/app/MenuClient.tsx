@@ -13,6 +13,7 @@ type Product = {
   category_id: string;
   name: string;
   price: number;
+  image_url?: string | null;
 };
 
 const slideshowImages = [
@@ -47,6 +48,9 @@ export default function MenuClient({ categories, products }: { categories: Categ
   const currentImage = slideshowImages[currentImageIndex];
 
   const filteredProducts = products.filter(p => p.category_id === activeCategoryId);
+
+  // Check if any product in current category has an image
+  const hasAnyImage = filteredProducts.some(p => p.image_url);
 
   return (
     <div className="flex flex-col gap-6">
@@ -112,7 +116,7 @@ export default function MenuClient({ categories, products }: { categories: Categ
         ))}
       </div>
 
-      {/* Products List */}
+      {/* Products */}
       <div className="mt-2">
         <AnimatePresence mode="wait">
           <motion.div
@@ -121,13 +125,54 @@ export default function MenuClient({ categories, products }: { categories: Categ
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.25 }}
-            className="flex flex-col gap-4"
+            className={hasAnyImage 
+              ? "grid grid-cols-2 gap-4" 
+              : "flex flex-col gap-4"
+            }
           >
             {filteredProducts.length === 0 ? (
-              <p className="text-center text-coffee-400 py-12 bg-white/5 rounded-2xl border border-dashed border-white/10">
+              <p className="text-center text-coffee-400 py-12 bg-white/5 rounded-2xl border border-dashed border-white/10 col-span-2">
                 لا يوجد منتجات في هذا القسم حالياً
               </p>
+            ) : hasAnyImage ? (
+              /* Card Layout - when products have images */
+              filteredProducts.map((product) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="rounded-2xl overflow-hidden glass-panel bg-white/5 dark:bg-black/20 border border-white/10 flex flex-col"
+                >
+                  {/* Product Image */}
+                  <div className="h-36 bg-coffee-900/50 overflow-hidden relative">
+                    {product.image_url ? (
+                      <img 
+                        src={product.image_url} 
+                        alt={product.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <svg className="w-10 h-10 text-coffee-700/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                    )}
+                    {/* Price badge on image */}
+                    <div className="absolute top-2 left-2 bg-coffee-950/70 backdrop-blur-md px-3 py-1 rounded-full border border-gold-500/20">
+                      <span className="text-sm font-bold text-gold-400">{product.price}</span>
+                      <span className="text-[10px] text-coffee-300 mr-1">ج.م</span>
+                    </div>
+                  </div>
+
+                  {/* Product Info */}
+                  <div className="p-3 flex-1 flex items-center">
+                    <h3 className="text-sm font-bold text-white leading-tight">{product.name}</h3>
+                  </div>
+                </motion.div>
+              ))
             ) : (
+              /* List Layout - when no images */
               filteredProducts.map((product) => (
                 <div 
                   key={product.id}
